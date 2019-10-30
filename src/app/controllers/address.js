@@ -39,7 +39,7 @@ class AdressController {
         }
 
         const user = await User.findByPk(user_id, {
-            include: { association: 'addresses' }
+            include: { association: 'addresses', required: false }
         })
             .catch(err => console.log(err));
 
@@ -48,6 +48,71 @@ class AdressController {
         }
 
         return res.json(user.addresses);
+    }
+
+    async updateAdress(req, res) {
+        const { user_id, address_id } = req.params;
+        const { street, zip_code, city } = req.body;
+
+        if (!user_id) {
+            return res.status(400).json({ message: 'You must provide a user_id' });
+        }
+
+        if (!address_id) {
+            return res.status(400).json({ message: 'You must provide a address_id' });
+        }
+
+        const user = await User.findByPk(user_id, {
+            include: {
+                association: 'addresses',
+                where: { id: address_id },
+            }
+        })
+            .catch(err => console.log(err));
+
+        if (!user) {
+            return res.status(400).json({ message: 'User or address not found' });
+        }
+
+        const address = await Address.findByPk(address_id);
+
+        await address.update({
+            street: street ? street : address.street,
+            zip_code: zip_code ? zip_code : address.zip_code,
+            city: city ? city : address.city,
+        });
+
+        return res.json(address);
+    }
+
+    async deleteAdress(req, res) {
+        const { user_id, address_id } = req.params;
+
+        if (!user_id) {
+            return res.status(400).json({ message: 'You must provide a user_id' });
+        }
+
+        if (!address_id) {
+            return res.status(400).json({ message: 'You must provide a address_id' });
+        }
+
+        const user = await User.findByPk(user_id, {
+            include: {
+                association: 'addresses',
+                where: { id: address_id },
+            }
+        })
+            .catch(err => console.log(err));
+
+        if (!user) {
+            return res.status(400).json({ message: 'User or address not found' });
+        }
+
+        const address = await Address.findByPk(address_id);
+
+        await address.destroy();
+
+        return res.json({ message: 'Address was removed' });
     }
 }
 
